@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Budget Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-600">Family Budget Dashboard</h1>
+            <p class="text-gray-500 mt-2">A clear, interactive view of your monthly finances.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="lg:col-span-1 space-y-8">
+                
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Add Transaction</h2>
+                    <form id="add-transaction-form" class="space-y-4">
+                        <div>
+                            <label for="transaction-type" class="block text-sm font-medium text-gray-700">Type</label>
+                            <select id="transaction-type" name="type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                                <option value="saving">Saving</option>
+                                <option value="debt">Debt</option>
+                            </select>
+                        </div>
+                        <div id="category-input-container">
+                            <label for="transaction-category" class="block text-sm font-medium text-gray-700">Category</label>
+                            <input type="text" id="transaction-category" name="category" placeholder="e.g., Household" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="transaction-item" class="block text-sm font-medium text-gray-700">Item / Source / Creditor</label>
+                            <input type="text" id="transaction-item" name="item" required placeholder="e.g., Groceries" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="transaction-amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" id="transaction-amount" name="amount" required placeholder="0.00" step="0.01" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-semibold">
+                            Add
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Monthly Summary</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                            <span class="font-medium text-green-800">Total Income</span>
+                            <span id="total-income" class="font-bold text-lg text-green-600">Ksh 0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                            <span class="font-medium text-red-800">Total Expenses</span>
+                            <span id="total-expenses" class="font-bold text-lg text-red-600">Ksh 0.00</span>
+                        </div>
+                         <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                            <span class="font-medium text-yellow-800">Total Debt</span>
+                            <span id="total-debt" class="font-bold text-lg text-yellow-600">Ksh 0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                            <span class="font-medium text-blue-800">Net Savings</span>
+                            <span id="net-savings" class="font-bold text-lg text-blue-600">Ksh 0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Smart Alerts</h2>
+                    <div id="recommendations" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-8">
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Expense Breakdown</h2>
+                    <div class="h-64 md:h-80"><canvas id="expenseChart"></canvas></div>
+                </div>
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Income vs. Expenses</h2>
+                     <div class="h-64 md:h-80"><canvas id="incomeExpenseChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-8">
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Detailed Transactions</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source/Item</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-700 mb-4">Debt Tracking</h2>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creditor</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="debt-table" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="text-center mt-12 text-gray-500">
+            <div class="flex justify-center items-center flex-wrap gap-2">
+                <input type="file" id="load-data-input" accept=".json" class="hidden">
+                <button id="load-data-btn" class="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 font-semibold">
+                    Load Data (JSON)
+                </button>
+                <button id="save-data-btn" class="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 font-semibold">
+                    Save Data (JSON)
+                </button>
+                <button id="export-report-btn" class="bg-stone-600 text-white py-2 px-6 rounded-md hover:bg-stone-700 font-semibold">
+                    Export Report (PDF)
+                </button>
+                <button id="clear-data-btn" class="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 font-semibold">
+                    Clear All Data
+                </button>
+            </div>
+            <p class="mt-6">Created by RyanBolds.</p>
+            <p>Powered by <a href="https://tailwindcss.com/" class="text-indigo-500 hover:underline">Tailwind CSS</a> & <a href="https://www.chartjs.org/" class="text-indigo-500 hover:underline">Chart.js</a></p>
+	        <p><a href="mailto:rbolds.co@gmail.com" class="text-indigo-500 hover:underline">Your feedback is welcome!</a></p>
+        </footer>
+    </div>
+
+    <script>
+    (function() {
+        // --- DATA STORE ---
+        let budgetData = {
+            income: [],
+            expenses: [],
+            savings: [],
+            debts: []
+        };
+
+        // --- CHART INSTANCES ---
+        let expenseChartInstance = null;
+        let incomeExpenseChartInstance = null;
+
+        // --- UTILITY FUNCTIONS ---
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(amount);
+        };
+
+        // --- CORE RENDER FUNCTION ---
+        function renderDashboard() {
+            const totalIncome = budgetData.income.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenses = budgetData.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const totalDebt = budgetData.debts.filter(d => !d.paid).reduce((sum, item) => sum + item.amount, 0);
+            const netSavings = totalIncome - totalExpenses;
+
+            document.getElementById('total-income').textContent = formatCurrency(totalIncome);
+            document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('total-debt').textContent = formatCurrency(totalDebt);
+            
+            const netSavingsEl = document.getElementById('net-savings');
+            netSavingsEl.textContent = formatCurrency(netSavings);
+            netSavingsEl.classList.toggle('text-red-600', netSavings < 0);
+            netSavingsEl.classList.toggle('text-blue-600', netSavings >= 0);
+
+            populateTable();
+            populateDebtTable();
+            generateRecommendations(totalIncome, totalExpenses);
+            createExpenseChart();
+            createIncomeExpenseChart(totalIncome, totalExpenses);
+        }
+
+        // --- UI UPDATE FUNCTIONS ---
+        function populateTable() {
+            const tableBody = document.getElementById('transaction-table');
+            tableBody.innerHTML = '';
+            
+            const addRow = (category, item, amount, typeColor) => {
+                const typeText = { green: 'Income', red: 'Expense', blue: 'Saving' }[typeColor];
+                const row = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${category}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${typeColor}-100 text-${typeColor}-800">${typeText}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-medium">${formatCurrency(amount)}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            };
+
+            budgetData.income.forEach(item => addRow('Income', item.source, item.amount, 'green'));
+            budgetData.expenses.forEach(item => addRow(item.category, item.item, item.amount, 'red'));
+            budgetData.savings.forEach(item => addRow('Savings', item.source, item.amount, 'blue'));
+        }
+
+        function populateDebtTable() {
+            const tableBody = document.getElementById('debt-table');
+            tableBody.innerHTML = '';
+            budgetData.debts.forEach((debt, index) => {
+                const row = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${debt.creditor}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-medium">${formatCurrency(debt.amount)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                            <button class="toggle-debt-status px-3 py-1 text-xs font-semibold rounded-full ${debt.paid ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}" data-index="${index}">
+                                ${debt.paid ? 'Paid' : 'Unpaid'}
+                            </button>
+                        </td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function generateRecommendations(income, expenses) {
+            const recommendationsEl = document.getElementById('recommendations');
+            recommendationsEl.innerHTML = '';
+            let html = '';
+            
+            if (expenses > income) {
+                html += createAlert('Overspending Alert!', `Your expenses are ${formatCurrency(expenses - income)} higher than your income.`, 'red');
+            }
+
+            const idealSavings = income * 0.20;
+            const actualSavings = income - expenses;
+            if (actualSavings > 0 && actualSavings < idealSavings) {
+                html += createAlert('Savings Opportunity', `You saved ${formatCurrency(actualSavings)}. Aim for a 20% savings goal of ${formatCurrency(idealSavings)}.`, 'yellow');
+            } else if (actualSavings >= idealSavings) {
+                html += createAlert('Excellent Savings!', `You've exceeded your 20% savings goal. Keep up the fantastic work!`, 'green');
+            }
+            
+            recommendationsEl.innerHTML = html || '<p class="text-gray-500">No alerts this month. Everything looks balanced.</p>';
+        }
+        
+        function createAlert(title, message, color) {
+            const icons = {
+                red: '<svg class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+                yellow: '<svg class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>',
+                green: '<svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+            };
+            return `
+                <div class="flex items-start p-3 bg-${color}-100 rounded-lg">
+                    <div class="flex-shrink-0">${icons[color]}</div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-${color}-800">${title}</h3>
+                        <p class="text-sm text-${color}-700 mt-1">${message}</p>
+                    </div>
+                </div>`;
+        }
+
+        // --- CHART CREATION FUNCTIONS ---
+        function createExpenseChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if (expenseChartInstance) expenseChartInstance.destroy();
+            
+            const expenseCategories = budgetData.expenses.reduce((acc, expense) => {
+                acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                return acc;
+            }, {});
+
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseCategories),
+                    datasets: [{
+                        data: Object.values(expenseCategories),
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#10b981'],
+                        borderColor: '#ffffff', borderWidth: 4,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { position: 'bottom', labels: { padding: 20, font: { size: 14, family: 'Inter' } } } }
+                }
+            });
+        }
+
+        function createIncomeExpenseChart(income, expenses) {
+            const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+            if (incomeExpenseChartInstance) incomeExpenseChartInstance.destroy();
+            incomeExpenseChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Monthly Financial Flow'],
+                    datasets: [
+                        { label: 'Total Income', data: [income], backgroundColor: '#22c55e', borderRadius: 6, barPercentage: 0.5 },
+                        { label: 'Total Expenses', data: [expenses], backgroundColor: '#ef4444', borderRadius: 6, barPercentage: 0.5 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: (value) => 'Ksh ' + value } } },
+                    plugins: { legend: { position: 'top', labels: { font: { size: 14, family: 'Inter' } } } }
+                }
+            });
+        }
+
+        // --- PDF AND FILE HANDLING ---
+        function exportReportAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const reportMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            doc.setFontSize(18);
+            doc.text("Family Budget Report", 14, 22);
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(`Monthly Budget for ${reportMonth}`, 14, 30);
+
+            const totalIncome = budgetData.income.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenses = budgetData.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const totalDebt = budgetData.debts.filter(d => !d.paid).reduce((sum, item) => sum + item.amount, 0);
+            const netSavings = totalIncome - totalExpenses;
+            
+            const summaryText = `
+                Total Income: ${formatCurrency(totalIncome)}
+                Total Expenses: ${formatCurrency(totalExpenses)}
+                Total Outstanding Debt: ${formatCurrency(totalDebt)}
+                Net Savings: ${formatCurrency(netSavings)}
+            `;
+            doc.text(summaryText, 14, 42);
+
+            const headStyles = { fillColor: [74, 85, 104] };
+            const incomeData = budgetData.income.map(i => [i.source, formatCurrency(i.amount)]);
+            doc.autoTable({ head: [['Income Source', 'Amount']], body: incomeData, startY: 65, headStyles });
+            
+            const expenseData = budgetData.expenses.map(e => [e.category, e.item, formatCurrency(e.amount)]);
+            doc.autoTable({ head: [['Category', 'Item', 'Amount']], body: expenseData, startY: doc.autoTable.previous.finalY + 10, headStyles });
+            
+            const savingsData = budgetData.savings.map(s => [s.source, formatCurrency(s.amount)]);
+            doc.autoTable({ head: [['Savings Source', 'Amount']], body: savingsData, startY: doc.autoTable.previous.finalY + 10, headStyles });
+            
+            const debtData = budgetData.debts.map(d => [d.creditor, formatCurrency(d.amount), d.paid ? 'Paid' : 'Unpaid']);
+            doc.autoTable({ head: [['Creditor', 'Amount', 'Status']], body: debtData, startY: doc.autoTable.previous.finalY + 10, headStyles });
+            
+            doc.save(`Family-Budget-Report-${reportMonth.replace(' ', '-')}.pdf`);
+        }
+
+        function saveDataToFile() {
+            const dataStr = JSON.stringify(budgetData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'family-budget-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadDataFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) { return; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (loadedData.income && loadedData.expenses && loadedData.savings && loadedData.debts) {
+                        budgetData = loadedData;
+                        renderDashboard();
+                        alert('Budget data loaded successfully!');
+                    } else {
+                        alert('Error: Invalid or corrupted data file.');
+                    }
+                } catch (error) {
+                    alert('Error: Could not read the file. Please ensure it is a valid JSON data file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all budget data? This action cannot be undone.')) {
+                budgetData = { income: [], expenses: [], savings: [], debts: [] };
+                renderDashboard();
+                alert('All data has been cleared.');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const type = form.type.value;
+            const item = form.item.value;
+            const category = form.category.value;
+            const amount = parseFloat(form.amount.value);
+            if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount.'); return; }
+            if (type === 'income') budgetData.income.push({ source: item, amount });
+            else if (type === 'expense') {
+                if (!category) { alert('Please enter a category for the expense.'); return; }
+                budgetData.expenses.push({ category, item, amount });
+            } 
+            else if (type === 'saving') budgetData.savings.push({ source: item, amount });
+            else if (type === 'debt') budgetData.debts.push({ creditor: item, amount, paid: false });
+            form.reset();
+            document.getElementById('category-input-container').style.display = 'block';
+            renderDashboard();
+        });
+
+        document.getElementById('transaction-type').addEventListener('change', (e) => {
+            const categoryInput = document.getElementById('category-input-container');
+            const itemLabel = document.querySelector('label[for="transaction-item"]');
+            if (e.target.value === 'expense') {
+                categoryInput.style.display = 'block';
+                itemLabel.textContent = 'Item / Source';
+            } else if (e.target.value === 'debt') {
+                categoryInput.style.display = 'none';
+                itemLabel.textContent = 'Creditor';
+            } else {
+                categoryInput.style.display = 'none';
+                itemLabel.textContent = 'Item / Source';
+            }
+        });
+
+        document.getElementById('debt-table').addEventListener('click', (e) => {
+            if (e.target.classList.contains('toggle-debt-status')) {
+                const index = e.target.dataset.index;
+                budgetData.debts[index].paid = !budgetData.debts[index].paid;
+                renderDashboard();
+            }
+        });
+        
+        document.getElementById('export-report-btn').addEventListener('click', exportReportAsPDF);
+        document.getElementById('save-data-btn').addEventListener('click', saveDataToFile);
+        document.getElementById('load-data-btn').addEventListener('click', () => {
+            document.getElementById('load-data-input').click();
+        });
+        document.getElementById('load-data-input').addEventListener('change', loadDataFromFile);
+        document.getElementById('clear-data-btn').addEventListener('click', clearAllData);
+
+        // --- INITIALIZATION ON PAGE LOAD ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('category-input-container').style.display = 'block';
+            renderDashboard();
+        });
+    })();
+    </script>
+
+</body>
+</html>
